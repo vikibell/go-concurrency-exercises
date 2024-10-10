@@ -31,7 +31,7 @@ type page struct {
 // KeyStoreCache is a LRU cache for string key-value pairs
 type KeyStoreCache struct {
 	cache map[string]*list.Element
-	pages list.List
+	pages *list.List
 	load  func(string) string
 	mu    sync.Mutex
 }
@@ -41,30 +41,30 @@ func New(load KeyStoreCacheLoader) *KeyStoreCache {
 	return &KeyStoreCache{
 		load:  load.Load,
 		cache: make(map[string]*list.Element),
+		pages: list.New(),
 	}
 }
 
 // Get gets the key from cache, loads it from the source if needed
 func (k *KeyStoreCache) Get(key string) string {
 	k.mu.Lock()
+	defer k.mu.Unlock()
+
 	if e, ok := k.cache[key]; ok {
 		k.pages.MoveToFront(e)
-		k.mu.Unlock()
 		return e.Value.(page).Value
 	}
-	k.mu.Unlock()
 	// Miss - load from database and save it in cache
 	p := page{key, k.load(key)}
-
-	k.mu.Lock()
-	defer k.mu.Unlock()
 	// if cache is full remove the least used item
 	if len(k.cache) >= CacheSize {
 		end := k.pages.Back()
-		// remove from map
-		delete(k.cache, end.Value.(page).Key)
-		// remove from list
-		k.pages.Remove(end)
+		if end != nil {
+			// remove from map
+			delete(k.cache, end.Value.(page).Key)
+			// remove from list
+			k.pages.Remove(end)
+		}
 	}
 	k.pages.PushFront(p)
 	k.cache[key] = k.pages.Front()
