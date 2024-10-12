@@ -101,9 +101,10 @@ func (m *SessionManager) UpdateSessionData(sessionID string, data map[string]int
 }
 
 func (m *SessionManager) DeleteInactiveSessions() {
-	for {
-		time.Sleep(1 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
+	for range ticker.C {
 		m.mu.Lock()
 		for sessionID, session := range m.sessions {
 			if time.Since(session.ActivityTime) > 5*time.Second {
