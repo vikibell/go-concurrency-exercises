@@ -27,8 +27,8 @@ import (
 // SessionManager keeps track of all sessions from creation, updating
 // to destroying.
 type SessionManager struct {
-	sessions map[string]Session
 	mu       sync.Mutex
+	sessions map[string]Session
 }
 
 // Session stores the session's data
