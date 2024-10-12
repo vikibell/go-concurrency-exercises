@@ -33,8 +33,8 @@ type SessionManager struct {
 
 // Session stores the session's data
 type Session struct {
-	Data map[string]interface{}
-	Time time.Time
+	Data         map[string]interface{}
+	ActivityTime time.Time
 }
 
 // NewSessionManager creates a new sessionManager
@@ -59,8 +59,8 @@ func (m *SessionManager) CreateSession() (string, error) {
 	defer m.mu.Unlock()
 
 	m.sessions[sessionID] = Session{
-		Data: make(map[string]interface{}),
-		Time: time.Now(),
+		Data:         make(map[string]interface{}),
+		ActivityTime: time.Now(),
 	}
 
 	return sessionID, nil
@@ -93,8 +93,8 @@ func (m *SessionManager) UpdateSessionData(sessionID string, data map[string]int
 
 	// Hint: you should renew expiry of the session here
 	m.sessions[sessionID] = Session{
-		Data: data,
-		Time: time.Now(),
+		Data:         data,
+		ActivityTime: time.Now(),
 	}
 
 	return nil
@@ -106,7 +106,7 @@ func (m *SessionManager) DeleteInactiveSessions() {
 
 		m.mu.Lock()
 		for sessionID, session := range m.sessions {
-			if time.Since(session.Time) > 5*time.Second {
+			if time.Since(session.ActivityTime) > 5*time.Second {
 				delete(m.sessions, sessionID)
 			}
 		}
